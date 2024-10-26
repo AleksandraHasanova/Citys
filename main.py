@@ -16,7 +16,7 @@ def get_coordinates(city, key):
     except Exception as e:
         mb.showerror('Ошибка', f'Произошла ошибка {e}')
 
-def show_coordinates():
+def show_coordinates(event):
     city = entry.get()
     coordinates = get_coordinates(city, key)
 
@@ -29,6 +29,7 @@ window.geometry('450x150')
 
 entry = Entry()
 entry.pack(pady=10)
+entry.bind('<Return>', show_coordinates)
 
 btn = Button(text='Поиск города', command=show_coordinates)
 btn.pack(pady=10)
