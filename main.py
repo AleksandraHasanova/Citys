@@ -4,6 +4,8 @@ from tkinter import messagebox as mb
 import webbrowser
 import requests
 
+lat=0
+lon=0
 
 def get_weather(lat, lon):
     try:
@@ -16,39 +18,23 @@ def get_weather(lat, lon):
         return f"Ошибка при получении погоды: {e}"
 
 def show_weather():
-    current_weather = get_weather(lat, lon)
-    weather_window = Toplevel(window)
-    weather_window.title("Текущая погода")
+    if lat and lon:
+        current_weather = get_weather(lat, lon)
+        weather_window = Toplevel(window)
+        weather_window.title("Текущая погода")
 
-    if isinstance(current_weather, str):
-        label = Label(weather_window, text=current_weather)
-        label.pack()
-    else:
         temperature = current_weather['temperature']
         windspeed = current_weather['windspeed']
         weather_text = f"Температура: {temperature}°C\nСкорость ветра: {windspeed} км/ч"
-        label = Label(weather_window, text=weather_text)
-        label.pack()
-
-
-
-def show_weather():
-    current_weather = get_weather(lat, lon)
-    weather_window = Toplevel(window)
-    weather_window.title("Текущая погода")
-
-    if isinstance(current_weather, str):
-        label = Label(weather_window, text=current_weather)
+        label_weather = Label(weather_window, text=weather_text)
+        label_weather.pack()
     else:
-        temperature = current_weather['temperature']
-        windspeed = current_weather['windspeed']
-        weather_text = f"Температура: {temperature}°C\nСкорость ветра: {windspeed} км/ч"
-        label = Label(weather_window, text=weather_text)
-        label.pack()
+        mb.showerror('Ошибка', 'Ошибка получения погоды')
 
 
 def get_coordinates(city, key):
     global lat, lon
+    global map_url
     try:
         geocoder = OpenCageGeocode(key)
         results = geocoder.geocode(city, language='ru')
@@ -57,15 +43,14 @@ def get_coordinates(city, key):
             lon = round(results[0]['geometry']['lng'], 2)
             country = results[0]['components']['country']
             currency = results[0]['annotations']['currency']['name']
-            osm_url = f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}"
+            map_url = f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}"
             if 'state' in results[0]['components']:
                 region = results[0]['components']['state']
-                return {"coordinates": f"Широта: {lat}, Долгота: {lon}\n Страна: {country}. Регион: {region}\n Валюта: {currency}",
-                        "map_url": osm_url}
+                return f"Широта: {lat}, Долгота: {lon} \n Страна: {country}. Регион: {region} \n Валюта: {currency}"
             else:
-                return {"coordinates": f"Широта: {lat}, Долгота: {lon}\n Страна: {country}. Валюта: {currency}",
-                        "map_url": None}
+                return f"Широта: {lat}, Долгота: {lon}\n Страна: {country}. Валюта: {currency}"
         else:
+            map_url = None
             return f'Город {city} не найден'
     except Exception as e:
         mb.showerror('Ошибка', f'Произошла ошибка {e}')
@@ -73,20 +58,24 @@ def get_coordinates(city, key):
 def show_coordinates(event=None):
     city = entry.get()
     result = get_coordinates(city, key)
-    label.config(text=f"Координаты города {city}:\n {result['coordinates']}")
-    global map_url
-    map_url = result['map_url']
+    label.config(text=f"Координаты города {city}:\n {result}")
+
 
 def show_map():
     if map_url:
         webbrowser.open(map_url)
+
+def clear():
+    entry.delete(0, END)
+    label.config(text='Введите название города')
+
 
 key = '34eb7c00e36444bea8ed85dfe746e82e'
 map_url = None
 
 window = Tk()
 window.title('Информация о городах')
-window.geometry('450x250')
+window.geometry('450x350')
 
 entry = Entry()
 entry.pack(pady=10)
@@ -104,5 +93,7 @@ map_btn.pack(pady=10)
 weather_button = Button(text="Показать погоду", command=show_weather)
 weather_button.pack(pady=10)
 
+clear_btn = Button(text='Очистить', command=clear)
+clear_btn.pack(pady=10)
 
 window.mainloop()
